@@ -1,0 +1,11 @@
+pandas==2.2.2
+numpy==1.26.4
+matplotlib==3.9.0
+seaborn==0.13.2
+plotly==5.22.0
+scikit-learn==1.5.0
+gspread==6.1.2
+google-auth==2.30.0
+google-auth-oauthlib==1.2.0
+google-auth-httplib2==0.2.0
+google-api-python-client==2.131.0

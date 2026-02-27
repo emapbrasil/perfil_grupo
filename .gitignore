@@ -1,0 +1,18 @@
+# Credenciais — NUNCA versionar
+*.json
+service_account*.json
+
+# Gráficos gerados (ficam no Drive, não no repo)
+graficos/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+
+# Jupyter (se rodar localmente)
+.ipynb_checkpoints/
+*.ipynb
