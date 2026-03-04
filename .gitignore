@@ -2,8 +2,8 @@
 *.json
 service_account*.json
 
-# Gráficos gerados (ficam no Drive, não no repo)
-graficos/
+# Gráficos são versionados no repo para servir via GitHub Pages
+# graficos/
 
 # Python
 __pycache__/
