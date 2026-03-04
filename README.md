@@ -101,6 +101,7 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 # Exportar variáveis de ambiente
+# se for Windows, substitua export por set
 export GOOGLE_SERVICE_ACCOUNT_JSON='{ ... conteúdo do JSON ... }'
 export SPREADSHEET_ID='seu-id-aqui'
 export DRIVE_FOLDER_ID='seu-id-aqui'
@@ -128,15 +129,21 @@ emap-analise/
 
 ## Gráficos gerados
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `distrib_genero.png` | Distribuição por gênero |
-| `febre_reumatica.png` | Prevalência de febre reumática |
-| `tempo_benzetacil.png` | Tempo de uso da Benzetacil |
-| `imc.png` | Distribuição de IMC |
-| `faixa_etaria_sintomas.png` | Idade na primeira manifestação |
-| `relacao_estresse.png` | Relação com estresse intenso |
-| `relacao_covid.png` | Relação com COVID-19 |
+| Arquivo                        | Descrição                                                        |
+|-------------------------------|------------------------------------------------------------------|
+| `distrib_genero.png`           | Distribuição por gênero                                          |
+| `febre_reumatica.png`          | Prevalência de febre reumática                                   |
+| `tempo_benzetacil.png`         | Tempo de uso da Benzetacil                                       |
+| `imc.png`                      | Distribuição de IMC                                              |
+| `idade_primeiros_sintomas.png` | Idade na primeira manifestação dos sintomas                      |
+| `sintomas.png`                 | Principais sintomas visuais relatados                            |
+| `ascendencia.png`              | Origem étnica/ascendência declarada                              |
+| `distribuicao_uf_barras.png`   | Distribuição dos respondentes por estado (barras)                |
+| `distribuicao_uf_mapa.png`     | Distribuição dos respondentes por estado (mapa do Brasil)        |
+| `relacao_tabagismo.png`        | Relação com tabagismo                                            |
+| `relacao_estresse.png`         | Relação com estresse intenso                                     |
+| `relacao_cirurgia.png`         | Relação com cirurgias                                            |
+| `relacao_covid.png`            | Relação com COVID-19                                             |
 
 ---
 
