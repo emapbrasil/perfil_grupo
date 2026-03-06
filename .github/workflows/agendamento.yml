@@ -9,7 +9,7 @@ on:
 permissions:
   contents: write
 
-# Evita execuções concorrentes na mesma ref (mitiga corrida de push)
+# Evita concorrência entre runs na mesma branch
 concurrency:
   group: perfil-grupo-${{ github.ref }}
   cancel-in-progress: true
@@ -24,14 +24,17 @@ jobs:
         with:
           fetch-depth: 0
           ref: master
-          # persist-credentials é true por padrão: permite git push com GITHUB_TOKEN
-          # (mantemos padrão)  ← documentação do checkout
+          # persist-credentials: true (padrão) -> permite git push com GITHUB_TOKEN
+          # Doc do checkout: fetch-depth 0 pega histórico completo. 
+          # (não mudar) 
+
       - name: Configurar Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+      # Rebase ANTES de gerar arquivos, para minimizar divergência
       - name: Sincronizar branch com rebase
         run: |
           git fetch origin master
@@ -56,30 +59,34 @@ jobs:
         run: python analise.py
 
       - name: Preparar commit (somente se houver mudanças)
+        id: prep-commit
         run: |
           set -e
           git add graficos/ analise.md || true
           if git diff --cached --quiet; then
+            echo "nothing_to_commit=true" >> $GITHUB_OUTPUT
             echo "Sem mudanças para commit."
             exit 0
           fi
           git commit -m "chore: atualiza gráficos e análise [$(date '+%Y-%m-%d')]"
+          echo "nothing_to_commit=false" >> $GITHUB_OUTPUT
 
-      - name: Pull rebase e push com retry
-        if: success()
+      - name: Pull rebase e push (sem force) com retry
+        if: steps.prep-commit.outputs.nothing_to_commit == 'false'
         run: |
           set -e
           for i in 1 2 3 4 5; do
             echo "Tentativa $i..."
-            # Integra possíveis mudanças remotas antes do push
+            # Integra qualquer novo commit remoto antes do push:
             git pull --rebase --autostash origin master || true
-            # Usa --force-with-lease (seguro: só força se a cabeça remota é a esperada)
-            if git push --force-with-lease origin master; then
+            # Tenta push normal (fast-forward). Sem --force:
+            if git push origin master; then
               echo "Push OK na tentativa $i."
               exit 0
             fi
-            echo "Push falhou. Tentando novamente em 5s..."
+            echo "Push falhou (provável novo commit remoto). Aguardando 5s..."
             sleep 5
           done
           echo "Falha ao fazer push após múltiplas tentativas."
           exit 1
+``
