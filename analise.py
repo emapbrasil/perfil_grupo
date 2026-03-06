@@ -19,6 +19,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
+import json
 
 warnings.filterwarnings("ignore")
 pd.options.mode.chained_assignment = None
@@ -62,7 +63,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
-SPREADSHEET_ID = os.getenv("SPREADSHEET_ID", "").strip("'\"")
+SPREADSHEET_ID = os.getenv("SPREADSHEET_ID", "1jl1C9z_6f5Z_y-sxBfEGkT35BDJmcXxFVbuhESTk3dI").strip("'\"")
 WORKSHEET_NAME = os.getenv("WORKSHEET_NAME", "Coleta")
 SCOPES         = ["https://www.googleapis.com/auth/spreadsheets"]
 
@@ -134,7 +135,6 @@ def _replace_commas_in_parentheses(text):
         text = text.replace(f"({match})", f"({match.replace(',', ';')})")
     return text
 
-
 def tratar_dados(df: pd.DataFrame):
     log.info("Tratando dados...")
 
@@ -189,11 +189,18 @@ def tratar_dados(df: pd.DataFrame):
     ano_atual = datetime.today().year
     df["nasc_ano"]            = pd.to_numeric(df["nasc_ano"], errors="coerce")
     df["percep_sintomas_ano"] = pd.to_numeric(df["percep_sintomas_ano"], errors="coerce")
-    df["idade_atual"]         = ano_atual - df["nasc_ano"]
-    df["idade_sintomas"]      = df["percep_sintomas_ano"] - df["nasc_ano"]
-    df["idade_sintomas"]      = df.loc[
-        (df["idade_sintomas"] < 100) & (df["idade_sintomas"] > 0), "idade_sintomas"
-    ]
+
+    # Filtra anos de nascimento implausíveis (idade entre 10 e 100 anos)
+    df.loc[~df["nasc_ano"].between(ano_atual - 100, ano_atual - 10), "nasc_ano"] = np.nan
+
+    # Filtra ano de aparecimento dos sintomas (entre 1950 e o ano atual)
+    df.loc[~df["percep_sintomas_ano"].between(1950, ano_atual), "percep_sintomas_ano"] = np.nan
+
+    df["idade_atual"]    = ano_atual - df["nasc_ano"]
+    df["idade_sintomas"] = df["percep_sintomas_ano"] - df["nasc_ano"]
+
+    # Garante que idade dos sintomas seja plausível (entre 1 e 100 anos)
+    df.loc[~df["idade_sintomas"].between(1, 100), "idade_sintomas"] = np.nan
 
     # IMC
     df["percep_sinatomas_peso"] = pd.to_numeric(df["percep_sinatomas_peso"], errors="coerce")
@@ -730,6 +737,235 @@ def grafico_covid(df):
                  x=0.1, ha="center", fontweight="bold", y=0.97)
     _salvar(fig, "relacao_covid.png", "COVID-19")
 
+# ---------------------------------------------------------------------------
+# Cards de resumo
+# ---------------------------------------------------------------------------
+
+def grafico_cards_resumo(df, ascendencia_final, sintomas_final):
+    """
+    Gera uma imagem com cards de resumo das principais informações da pesquisa.
+    """
+    from matplotlib.patches import FancyBboxPatch
+
+    total = len(df)
+
+    sint     = sintomas_final.drop(columns=["cod_identificador", "data_hora_resposta"]).sum().sort_values(ascending=False)
+    sintoma_nome = sint.index[0] if len(sint) > 0 else "N/A"
+    sintoma_pct  = sint.iloc[0] / total * 100 if len(sint) > 0 else 0
+
+    uf_top   = df["UF"].value_counts()
+    uf_nome  = uf_top.index[0] if len(uf_top) > 0 else "N/A"
+    uf_pct   = uf_top.iloc[0] / total * 100 if len(uf_top) > 0 else 0
+
+    asc_top  = ascendencia_final.drop(columns=["cod_identificador", "data_hora_resposta"]).sum().sort_values(ascending=False)
+    asc_nome = asc_top.index[0] if len(asc_top) > 0 else "N/A"
+    asc_pct  = asc_top.iloc[0] / total * 100 if len(asc_top) > 0 else 0
+
+    fr_sim   = df["fl_teve_febre_reumatica"].sum()
+    fr_pct   = fr_sim / total * 100
+
+    media_sint = df["idade_sintomas"].mean()
+
+    estresse   = pd.to_numeric(df["afirm_ano_aparec_sintomas_estresse_intenso"], errors="coerce")
+    estresse_pct = (estresse >= 4).sum() / total * 100
+
+    media_atual = df["idade_atual"].mean()
+
+    cards = [
+        {"valor": str(total),            "label": "Total de\nParticipantes",               "cor": "#6C63FF"},
+        {"valor": f"{sintoma_pct:.0f}%", "label": f"Sintoma mais comum\n{sintoma_nome}",   "cor": "#A855F7"},
+        {"valor": f"{uf_pct:.0f}%",      "label": f"Maior concentração\n{uf_nome}",         "cor": "#22C55E"},
+        {"valor": f"{asc_pct:.0f}%",     "label": f"Ascendência predominante\n{asc_nome}",  "cor": "#D97706"},
+        {"valor": f"{fr_pct:.0f}%",      "label": "Histórico de\nFebre Reumática",          "cor": "#DC2626"},
+        {"valor": f"{media_atual:.0f}",  "label": "Idade média\natual",                     "cor": "#0891B2"},
+        {"valor": f"{media_sint:.0f}",   "label": "Idade média no\nsurgimento dos sintomas", "cor": "#2563EB"},
+        {"valor": f"{estresse_pct:.0f}%","label": "Relataram estresse\nno período",          "cor": "#EA580C"},
+    ]
+
+    cols  = 4
+    rows  = (len(cards) + cols - 1) // cols
+    fig_w = cols * 5.0
+    fig_h = rows * 3.8 + 1.8
+
+    fig, axes = plt.subplots(rows, cols, figsize=(fig_w, fig_h))
+    fig.subplots_adjust(top=0.82, hspace=0.35, wspace=0.25)
+    axes = np.array(axes).reshape(rows, cols)
+
+    for idx, card in enumerate(cards):
+        r, c = divmod(idx, cols)
+        ax   = axes[r][c]
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1)
+        ax.axis("off")
+        cor = card["cor"]
+
+        fundo = FancyBboxPatch((0.04, 0.04), 0.92, 0.92,
+                               boxstyle="round,pad=0.02",
+                               facecolor="#F0F4FF",
+                               edgecolor="#D0D8F0", linewidth=2,
+                               transform=ax.transAxes, clip_on=False)
+        ax.add_patch(fundo)
+
+        # Valor principal — grande e em bold
+        ax.text(0.5, 0.62, card["valor"], ha="center", va="center",
+                fontsize=38, fontweight="bold", color=cor,
+                transform=ax.transAxes)
+
+        # Label — escuro para contraste
+        ax.text(0.5, 0.22, card["label"], ha="center", va="center",
+                fontsize=14, fontweight="semibold", color="#1a1a1a",
+                transform=ax.transAxes,
+                multialignment="center", linespacing=1.5)
+
+    for idx in range(len(cards), rows * cols):
+        r, c = divmod(idx, cols)
+        axes[r][c].axis("off")
+
+    fig.suptitle("Resumo do Perfil EMAP Brasil", fontsize=F_TITULO,
+                 fontweight="bold", y=0.97)
+    fig.text(0.5, 0.91,
+             f"Baseado em {total} respondentes · {datetime.today().strftime('%d/%m/%Y')}",
+             ha="center", fontsize=F_SUBTITULO - 4, color="#333333")
+
+    _salvar(fig, "cards_resumo.png", "Cards Resumo")
+
+# ---------------------------------------------------------------------------
+# Análise automática com GROQ
+# ---------------------------------------------------------------------------
+
+PROMPT_ANALISE = """
+Você é um especialista em análise de dados de saúde, com experiência em comunicação acessível para pacientes e familiares.
+
+Você recebeu dados de uma pesquisa de perfil dos participantes do grupo EMAP Brasil.
+
+EMAP (Atrofia Macular Extensa cpm Pseudodrusas) é uma síndrome inflamatória autoimune rara, 
+possivelmente relacionada a histórico de febre reumática e infecção por estreptococos. 
+A pesquisa foi realizada com pacientes diagnosticados com EMAP, de forma voluntária via internet.
+
+Com base nesses dados fornecidos, escreva uma análise em português brasileiro, em linguagem acessível 
+(evite jargões médicos sem explicação), dividida nas seguintes seções:
+
+## Dados Básicos
+Analise perfil demográfico: gênero, idade de manifestação dos sintomas, distribuição geográfica e ascendência.
+Comente padrões relevantes e possíveis explicações (ex: viés de seleção por internet, concentração em SP, etc).
+
+## Dados de Saúde
+Analise IMC, febre reumática, uso de Benzetacil, tabagismo, estresse, cirurgias e relação com COVID-19.
+Destaque o que chamou atenção e o que surpreendentemente NÃO foi encontrado como fator prevalente.
+
+## Conclusão
+Sintetize os achados mais relevantes em 2-3 parágrafos. Aponte o que pode ser interessante para pesquisadores.
+Mantenha tom de esperança e engajamento, condizente com uma ONG de suporte a pacientes.
+
+Importante:
+- Use linguagem direta e empática, como se estivesse explicando para um paciente ou familiar
+- Mencione números e percentuais dos gráficos quando relevante
+- Não faça afirmações causais definitivas — use "pode indicar", "sugere", "é possível que"
+- O texto deve ter entre 400 e 600 palavras no total
+"""
+
+
+def _resumir_dados(df, ascendencia_final, sintomas_final) -> str:
+    """
+    Monta um resumo textual dos dados para enviar ao Groq.
+    """
+    total = len(df)
+    linhas = [f"Total de respondentes: {total}"]
+
+    # Gênero
+    genero = df["genero"].value_counts()
+    for g, n in genero.items():
+        linhas.append(f"Gênero {g}: {n} ({n/total*100:.1f}%)")
+
+    # Idades
+    media_atual   = df["idade_atual"].mean()
+    media_sintomas = df["idade_sintomas"].mean()
+    linhas.append(f"Idade média atual: {media_atual:.1f} anos")
+    linhas.append(f"Idade média no surgimento dos sintomas: {media_sintomas:.1f} anos")
+
+    # IMC
+    imc = df["classificacao_imc"].value_counts()
+    for cat, n in imc.items():
+        linhas.append(f"IMC - {cat}: {n} ({n/total*100:.1f}%)")
+
+    # Febre reumática
+    fr = df["fl_teve_febre_reumatica"].value_counts()
+    sim = fr.get(True, 0)
+    nao = fr.get(False, 0)
+    linhas.append(f"Histórico de febre reumática - Sim: {sim} ({sim/total*100:.1f}%), Não: {nao} ({nao/total*100:.1f}%)")
+
+    # Benzetacil
+    media_benz = df["benzetacil_anos_tratamento"].mean()
+    linhas.append(f"Tempo médio de uso de Benzetacil: {media_benz:.1f} anos")
+
+    # UF (top 5)
+    ufs = df["UF"].value_counts().head(5)
+    for uf, n in ufs.items():
+        linhas.append(f"Estado {uf}: {n} respondentes ({n/total*100:.1f}%)")
+
+    # Ascendência (top 5)
+    asc = ascendencia_final.drop(columns=["cod_identificador", "data_hora_resposta"]).sum().sort_values(ascending=False).head(5)
+    for nome, n in asc.items():
+        linhas.append(f"Ascendência {nome}: {int(n)} ({int(n)/total*100:.1f}%)")
+
+    # Sintomas (top 5)
+    sint = sintomas_final.drop(columns=["cod_identificador", "data_hora_resposta"]).sum().sort_values(ascending=False).head(5)
+    for nome, n in sint.items():
+        linhas.append(f"Sintoma '{nome}': {int(n)} ({int(n)/total*100:.1f}%)")
+
+    # Likert — estresse
+    likert_map = {1: "Discordo Totalmente", 2: "Discordo Parcialmente",
+                  3: "Neutro", 4: "Concordo Parcialmente", 5: "Concordo Totalmente"}
+    for col, label in [
+        ("afirm_ano_aparec_sintomas_estresse_intenso",     "Estresse intenso"),
+        ("afirm_ano_aparec_sintomas_fumava_intensamente",  "Tabagismo intenso"),
+        ("afirm_antes_aparec_sintomas_cirurgia",           "Cirurgia antes dos sintomas"),
+    ]:
+        contagem = pd.to_numeric(df[col], errors="coerce").value_counts().sort_index()
+        partes = [f"{likert_map.get(int(k), k)}: {v} ({v/total*100:.1f}%)"
+                  for k, v in contagem.items() if pd.notna(k)]
+        linhas.append(f"{label} — {', '.join(partes)}")
+
+    # COVID
+    covid = df["covid_piora_sintomas"].value_counts()
+    for resp, n in covid.items():
+        linhas.append(f"COVID piora sintomas - '{resp}': {n} ({n/total*100:.1f}%)")
+
+    return "\n".join(linhas)
+
+
+def gerar_analise_ia(df, ascendencia_final, sintomas_final):
+    """
+    Envia os dados numéricos para o Groq e salva a análise em analise.md
+    """
+    from groq import Groq
+
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
+    if not api_key:
+        log.warning("GROQ_API_KEY não configurada — análise automática ignorada.")
+        return
+
+    log.info("Gerando análise com Groq...")
+
+    resumo  = _resumir_dados(df, ascendencia_final, sintomas_final)
+    mensagem = f"Dados da pesquisa de perfil EMAP Brasil:\n\n{resumo}\n\n{PROMPT_ANALISE}"
+
+    client   = Groq(api_key=api_key)
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        max_tokens=1500,
+        messages=[{"role": "user", "content": mensagem}],
+    )
+    texto = response.choices[0].message.content
+
+    output_path = Path("analise.md")
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write("# Análise do Perfil EMAP Brasil\n\n")
+        f.write(f"*Gerado automaticamente em {datetime.today().strftime('%d/%m/%Y')} "
+                f"com base em {len(df)} respondentes.*\n\n")
+        f.write(texto)
+
+    log.info("Análise salva em %s", output_path)
 
 # ---------------------------------------------------------------------------
 # Ponto de entrada
@@ -738,8 +974,10 @@ def grafico_covid(df):
 def main():
     log.info("=== Iniciando análise EMAP ===")
 
-    gc              = get_google_client()
-    df_raw          = carregar_dados(gc)
+    # gc              = get_google_client()
+    # df_raw          = carregar_dados(gc)
+    url = f'https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=tsv'
+    df_raw = pd.read_csv(url, sep="\t")
     df, ascendencia_final, sintomas_final = tratar_dados(df_raw)
 
     graficos = [
@@ -756,6 +994,7 @@ def main():
         lambda: grafico_estresse(df),
         lambda: grafico_cirurgia(df),
         lambda: grafico_covid(df),
+        lambda: grafico_cards_resumo(df, ascendencia_final, sintomas_final),
     ]
 
     erros = []
@@ -771,6 +1010,11 @@ def main():
 
     log.info("=== Análise concluída. %d gráficos gerados. ===", len(graficos))
 
+    # Gera o texto com os dados dos gráficos com IA (não bloqueia o script se falhar)
+    try:
+        gerar_analise_ia(df, ascendencia_final, sintomas_final)
+    except Exception as exc:
+        log.error("Falha ao gerar análise: %s", exc, exc_info=True)
 
 if __name__ == "__main__":
     main()
