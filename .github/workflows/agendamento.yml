@@ -50,4 +50,5 @@ jobs:
         run: |
           git add graficos/ analise.md
           git diff --cached --quiet || git commit -m "chore: atualiza gráficos e análise [$(date '+%Y-%m-%d')]"
-          git push origin master
+          git pull --rebase origin master
+          git push --force-with-lease origin master
