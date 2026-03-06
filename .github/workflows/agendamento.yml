@@ -1,44 +1,41 @@
-name: Análise EMAP
+name: Análise → Atualiza branch data-output
 
 on:
-  # Segunda-feira às 08:00 BRT (11:00 UTC)
   schedule:
-    - cron: "0 11 * * 1"
+    - cron: "0 11 * * 1"   # 08:00 BRT nas segundas (11:00 UTC)
   workflow_dispatch:
 
 permissions:
   contents: write
 
-# Evita execuções concorrentes na mesma ref (mitiga corrida de push)
+# Evita duas execuções concorrentes mexendo na mesma branch de output
 concurrency:
-  group: perfil-grupo-${{ github.ref }}
+  group: output-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  OUTPUT_BRANCH: data-output
+  OUTPUT_DIR: graficos
+  MARKDOWN_FILE: analise.md
+
 jobs:
-  rodar-analise:
+  run-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: Checkout do repositório (branch master)
+      - name: Checkout do repositório (para ler código/fonte)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           ref: master
-          # persist-credentials é true por padrão: permite git push com GITHUB_TOKEN
-          # (mantemos padrão)  ← documentação do checkout
+
       - name: Configurar Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      - name: Sincronizar branch com rebase
-        run: |
-          git fetch origin master
-          git checkout master
-          git pull --rebase --autostash origin master
-
-      - name: Configurar Python 3.11
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -47,7 +44,7 @@ jobs:
       - name: Instalar dependências
         run: pip install -r requirements.txt
 
-      - name: Executar análise
+      - name: Executar análise (gera PNGs e Markdown)
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
@@ -55,30 +52,58 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python analise.py
 
-      - name: Preparar commit (somente se houver mudanças)
+      # A partir daqui, trocamos para a branch de artefatos, sem mexer na master
+      - name: Buscar branch de output
         run: |
-          set -e
-          git add graficos/ analise.md || true
+          # Garante que temos referências da remota
+          git fetch origin $OUTPUT_BRANCH || true
+
+          # Se a branch não existe no remoto, cria localmente a partir de um commit vazio
+          if ! git ls-remote --heads origin $OUTPUT_BRANCH | grep -q "$OUTPUT_BRANCH"; then
+            echo "Branch $OUTPUT_BRANCH não existe no remoto. Criando..."
+            # cria uma árvore vazia e comita .gitkeep para inicializar
+            git checkout --orphan $OUTPUT_BRANCH
+            git rm -rf . || true
+            mkdir -p $OUTPUT_DIR
+            touch $OUTPUT_DIR/.gitkeep
+            [ -f $MARKDOWN_FILE ] || echo "# Análise" > $MARKDOWN_FILE
+            git add -A
+            git commit -m "init $OUTPUT_BRANCH"
+            git push -u origin $OUTPUT_BRANCH
+          else
+            # Checkout da branch de output
+            git checkout $OUTPUT_BRANCH
+            # Traz updates remotos por segurança
+            git pull --rebase --autostash origin $OUTPUT_BRANCH || true
+          fi
+
+      - name: Atualizar artefatos na branch de output
+        run: |
+          # Limpa somente o que vamos substituir (opcional: manter histórico de outros arquivos)
+          mkdir -p $OUTPUT_DIR
+          # copia os novos arquivos gerados da workspace da master para a árvore atual
+          git checkout master -- $OUTPUT_DIR || true
+          git checkout master -- $MARKDOWN_FILE || true
+
+          # Adiciona e commita se houver mudanças
+          git add $OUTPUT_DIR/ $MARKDOWN_FILE || true
           if git diff --cached --quiet; then
-            echo "Sem mudanças para commit."
+            echo "Sem alterações nos artefatos."
             exit 0
           fi
-          git commit -m "chore: atualiza gráficos e análise [$(date '+%Y-%m-%d')]"
+          git commit -m "chore(output): atualiza PNGs e análise [$(date '+%Y-%m-%d')]"
 
-      - name: Pull rebase e push com retry
-        if: success()
+      - name: Push com rebase + retry (sem force)
         run: |
           set -e
           for i in 1 2 3 4 5; do
-            echo "Tentativa $i..."
-            # Integra possíveis mudanças remotas antes do push
-            git pull --rebase --autostash origin master || true
-            # Usa --force-with-lease (seguro: só força se a cabeça remota é a esperada)
-            if git push --force-with-lease origin master; then
-              echo "Push OK na tentativa $i."
+            echo "Tentativa $i de push para $OUTPUT_BRANCH..."
+            git pull --rebase --autostash origin $OUTPUT_BRANCH || true
+            if git push origin $OUTPUT_BRANCH; then
+              echo "Push OK."
               exit 0
             fi
-            echo "Push falhou. Tentando novamente em 5s..."
+            echo "Push falhou. Aguardando 5s e tentando novamente..."
             sleep 5
           done
           echo "Falha ao fazer push após múltiplas tentativas."
