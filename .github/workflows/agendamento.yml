@@ -1,43 +1,25 @@
 name: Análise EMAP
 
 on:
-  # Segunda-feira às 08:00 BRT (11:00 UTC)
+  # Agendamento: toda segunda-feira às 8h (horário de Brasília = 11h UTC)
   schedule:
     - cron: "0 11 * * 1"
+
+  # Permite disparar manualmente pela aba "Actions" no GitHub
   workflow_dispatch:
 
+# Permissão para fazer commit no repositório
 permissions:
   contents: write
-
-# Evita concorrência entre execuções na mesma branch
-concurrency:
-  group: perfil-grupo-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   rodar-analise:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: master  # ajuste para 'main' se for o caso
-
-      - name: Configurar identidade do Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Evita warnings de safe.directory
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      # Rebase inicial para começar já atualizado
-      - name: Sincronizar branch com remoto
-        run: |
-          git fetch origin master
-          git checkout master
-          git pull --rebase --autostash origin master
 
       - name: Configurar Python 3.11
         uses: actions/setup-python@v5
@@ -50,36 +32,16 @@ jobs:
 
       - name: Executar análise
         env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
-          WORKSHEET_NAME: ${{ vars.WORKSHEET_NAME }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GOOGLE_SERVICE_ACCOUNT_JSON:  ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SPREADSHEET_ID:               ${{ secrets.SPREADSHEET_ID }}
+          WORKSHEET_NAME:               ${{ vars.WORKSHEET_NAME }}
+          GROQ_API_KEY:                 ${{ secrets.GROQ_API_KEY }}
         run: python analise.py
 
-      - name: Preparar commit (somente se houver mudanças)
+      - name: Commit e push dos gráficos
         run: |
-          git add graficos/ analise.md || true
-          # Sai com 0 se NÃO houver mudanças staged
-          git diff --cached --quiet && echo "Sem mudanças para commit." && exit 0
-          git commit -m "chore: atualiza gráficos e análise [$(date '+%Y-%m-%d')]"
-
-      - name: Pull com rebase e push com retry
-        # Este passo só roda se houve commit no passo anterior
-        if: success()
-        run: |
-          set -e
-          # Tenta até 5 vezes para mitigar corrida com outros pushes
-          for i in 1 2 3 4 5; do
-            echo "Tentativa $i de push..."
-            # Integra possíveis mudanças remotas antes do push
-            git pull --rebase --autostash origin master || true
-            # Usa --force-with-lease para respeitar cabeças remotas
-            if git push --force-with-lease origin master; then
-              echo "Push bem-sucedido na tentativa $i."
-              exit 0
-            fi
-            echo "Push falhou. Aguardando 5s e tentando novamente..."
-            sleep 5
-          done
-          echo "Falha ao fazer push após múltiplas tentativas."
-          exit 1
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add graficos/
+          git diff --cached --quiet || git commit -m "chore: atualiza gráficos [$(date '+%Y-%m-%d')]"
+          git push
