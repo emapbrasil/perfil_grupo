@@ -133,7 +133,7 @@ jobs:
             sleep 5
           done
           echo "Falha ao fazer push após múltiplas tentativas."
-          exit 1
+          exit 1 
 
       # 7) (Opcional) Diagnóstico em caso de erro
       - name: Diagnóstico pós-falha
