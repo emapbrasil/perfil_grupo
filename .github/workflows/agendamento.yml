@@ -1,36 +1,57 @@
 name: Análise → Atualiza branch data-output
 
 on:
+  # Segunda-feira às 08:00 BRT (11:00 UTC)
   schedule:
-    - cron: "0 11 * * 1"   # 08:00 BRT (11:00 UTC) toda segunda
+    - cron: "0 11 * * 1"
   workflow_dispatch:
 
 permissions:
   contents: write   # necessário para permitir git push com GITHUB_TOKEN
 
+# Evita execuções concorrentes mexendo na mesma branch de output
 concurrency:
   group: perfil-grupo-data-output
   cancel-in-progress: true
 
+# Parâmetros globais e lista explícita de arquivos esperados
 env:
   OUTPUT_BRANCH: data-output
   OUTPUT_DIR: graficos
   MARKDOWN_FILE: analise.md
+  EXPECTED_PNGS: >-
+    distrib_genero.png
+    febre_reumatica.png
+    tempo_benzetacil.png
+    imc.png
+    idade_primeiros_sintomas.png
+    sintomas.png
+    ascendencia.png
+    distribuicao_uf_barras.png
+    distribuicao_uf_mapa.png
+    relacao_tabagismo.png
+    relacao_estresse.png
+    relacao_cirurgia.png
+    relacao_covid.png
+    cards_resumo.png
 
 jobs:
   run-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
-      # 1) Checkout do código-fonte na master (somente leitura/execução)
-      - name: Checkout master (fonte)
+      ######################################################################
+      # 1) Checkout do código-fonte na master (apenas para ler/gerar)
+      #    - Em 'repo/' para manter isolado do checkout de output
+      #    - Sem credenciais persistidas (não vamos fazer push a partir daqui)
+      ######################################################################
+      - name: Checkout master (fonte) em repo/
         uses: actions/checkout@v4
         with:
           ref: master
           fetch-depth: 0
           path: repo
-          # credenciais não são necessárias para leitura aqui
           persist-credentials: false
 
       - name: Configurar Python 3.11
@@ -52,60 +73,122 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python analise.py
 
-      # 2) Garantir que a branch data-output exista (se não existir, cria)
-      - name: Preparar repositório "nu" para criar branch de output (se precisar)
+        # Debug: listar o que o Python produziu
+      - name: Debug – listar arquivos gerados (repo/)
+        run: |
+          echo "==== repo/ (raiz) ===="; ls -lah repo | sed 's/^/repo: /'
+          echo "==== repo/${OUTPUT_DIR} ===="; ls -lah "repo/${OUTPUT_DIR}" | sed 's/^/repo-graficos: /'
+
+      ######################################################################
+      # 2) Validação rígida: TODOS os 14 PNGs precisam existir em repo/graficos
+      #    - Se faltar qualquer um, o job falha com mensagem clara
+      #    - (Opcional) torne o analise.md OBRIGATÓRIO descomentando o teste
+      ######################################################################
+      - name: Validação rígida (repo → 14 PNGs)
+        run: |
+          missing=0
+          for f in ${EXPECTED_PNGS}; do
+            if [ ! -f "repo/${OUTPUT_DIR}/${f}" ]; then
+              echo "::error file=${OUTPUT_DIR}/${f}::Arquivo esperado não gerado em repo/${OUTPUT_DIR}/${f}"
+              missing=1
+            fi
+          done
+          # Torne o analise.md obrigatório descomentando as linhas abaixo:
+          # if [ ! -f "repo/${MARKDOWN_FILE}" ]; then
+          #   echo "::error file=${MARKDOWN_FILE}::analise.md ausente"
+          #   missing=1
+          # fi
+          if [ "$missing" = "1" ]; then
+            echo "Um ou mais arquivos esperados não foram gerados pelo Python. Abortando."
+            exit 1
+          fi
+
+      ######################################################################
+      # 3) Garantir que a branch data-output exista no remoto (criação 1ª vez)
+      ######################################################################
+      - name: Garantir existência da branch ${{ env.OUTPUT_BRANCH }} no remoto
         run: |
           mkdir -p bare && cd bare
           git init
           git remote add origin "https://github.com/${{ github.repository }}.git"
           git fetch origin --depth=1 || true
-          # Se a data-output não existe no remoto, cria e faz push inicial
-          if ! git ls-remote --heads origin "$OUTPUT_BRANCH" | grep -q "$OUTPUT_BRANCH"; then
-            echo "Criando $OUTPUT_BRANCH no remoto..."
-            git checkout --orphan "$OUTPUT_BRANCH"
-            mkdir -p "$OUTPUT_DIR"
-            touch "$OUTPUT_DIR/.gitkeep"
-            echo "# Análise" > "$MARKDOWN_FILE"
+          if ! git ls-remote --heads origin "${OUTPUT_BRANCH}" | grep -q "${OUTPUT_BRANCH}"; then
+            echo "Criando ${OUTPUT_BRANCH} no remoto..."
+            git checkout --orphan "${OUTPUT_BRANCH}"
+            mkdir -p "${OUTPUT_DIR}"
+            touch "${OUTPUT_DIR}/.gitkeep"
+            echo "# Análise" > "${MARKDOWN_FILE}"
             git add -A
             git -c user.name="github-actions[bot]" \
                 -c user.email="github-actions[bot]@users.noreply.github.com" \
-                commit -m "init $OUTPUT_BRANCH"
+                commit -m "init ${OUTPUT_BRANCH}"
             git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
-                     "$OUTPUT_BRANCH":"$OUTPUT_BRANCH"
+                     "${OUTPUT_BRANCH}:${OUTPUT_BRANCH}"
           fi
 
-      # 3) Checkout da branch data-output em diretório separado (com credenciais para push)
-      - name: Checkout data-output (artefatos)
-        id: checkout_output
+      ######################################################################
+      # 4) Checkout da branch data-output em 'output/' (com credenciais)
+      ######################################################################
+      - name: Checkout ${{ env.OUTPUT_BRANCH }} (artefatos) em output/
         uses: actions/checkout@v4
         with:
           ref: ${{ env.OUTPUT_BRANCH }}
           fetch-depth: 0
           path: output
-          persist-credentials: true   # deixa credenciais para permitir git push
-          # usa por padrão o ${{ github.token }} do workflow
-          # (actions/checkout documenta esse comportamento) 
+          persist-credentials: true
 
-      - name: Configurar Git (somente no diretório de output)
+      - name: Configurar Git (output/)
         working-directory: output
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config --global --add safe.directory "$GITHUB_WORKSPACE/output"
 
-      # 4) Copiar arquivos gerados da master para a pasta de output
-      - name: Copiar novas imagens e markdown
+      ######################################################################
+      # 5) Sincronização TOTAL: apaga e recopia graficos/ + copia analise.md (se existir)
+      ######################################################################
+      - name: Sincronizar graficos/ e analise.md para a branch de output
         run: |
+          # Zera diretório de gráficos e recopia TUDO gerado pelo Python
+          rm -rf "output/${OUTPUT_DIR}"
           mkdir -p "output/${OUTPUT_DIR}"
-          cp -r "repo/${OUTPUT_DIR}/." "output/${OUTPUT_DIR}/" 2>/dev/null || true
+          cp -r "repo/${OUTPUT_DIR}/." "output/${OUTPUT_DIR}/"
+
+          # Copia analise.md se existir (opcional; para obrigar, use validação acima)
           if [ -f "repo/${MARKDOWN_FILE}" ]; then
             cp "repo/${MARKDOWN_FILE}" "output/${MARKDOWN_FILE}"
           fi
 
-      # 5) Commit condicional
+      - name: Debug – listar arquivos prontos para commit (output/)
+        run: |
+          echo "==== output/${OUTPUT_DIR} ===="; ls -lah "output/${OUTPUT_DIR}" | sed 's/^/output-graficos: /'
+          if [ -f "output/${MARKDOWN_FILE}" ]; then
+            echo "==== output/${MARKDOWN_FILE} ===="; wc -l "output/${MARKDOWN_FILE}" || true
+          fi
+
+      ######################################################################
+      # 6) Validação pós-cópia: TODOS os 14 PNGs precisam estar em output/graficos
+      ######################################################################
+      - name: Validação rígida (output → 14 PNGs)
+        run: |
+          missing=0
+          for f in ${EXPECTED_PNGS}; do
+            if [ ! -f "output/${OUTPUT_DIR}/${f}" ]; then
+              echo "::error file=${OUTPUT_DIR}/${f}::Arquivo esperado não copiado para output/${OUTPUT_DIR}/${f}"
+              missing=1
+            fi
+          done
+          if [ "$missing" = "1" ]; then
+            echo "Um ou mais PNGs não foram copiados para a branch data-output. Abortando."
+            exit 1
+          fi
+
+      ######################################################################
+      # 7) Commit condicional (só comita se houver mudanças)
+      ######################################################################
       - name: Commit (somente se houver mudanças)
-        working-directory: output
         id: commit
+        working-directory: output
         run: |
           git add "${OUTPUT_DIR}/" "${MARKDOWN_FILE}" 2>/dev/null || true
           if git diff --cached --quiet; then
@@ -113,19 +196,21 @@ jobs:
             echo "Sem mudanças para commit."
             exit 0
           fi
-          git commit -m "chore(output): atualiza PNGs e análise [$(date '+%Y-%m-%d')]"
+          git commit -m "chore(output): sincroniza todos os PNGs e análise [$(date '+%Y-%m-%d')]"
           echo "changed=true" >> $GITHUB_OUTPUT
 
-      # 6) Push com rebase + retry (sem force)
-      - name: Push para data-output (com retry)
+      ######################################################################
+      # 8) Push com rebase + retry (sem force)
+      ######################################################################
+      - name: Push para ${{ env.OUTPUT_BRANCH }} (retry)
         if: steps.commit.outputs.changed == 'true'
         working-directory: output
         run: |
           set -e
           for i in 1 2 3 4 5; do
             echo "Tentativa $i..."
-            git pull --rebase --autostash origin "$OUTPUT_BRANCH" || true
-            if git push origin "$OUTPUT_BRANCH"; then
+            git pull --rebase --autostash origin "${OUTPUT_BRANCH}" || true
+            if git push origin "${OUTPUT_BRANCH}"; then
               echo "Push OK."
               exit 0
             fi
@@ -135,11 +220,17 @@ jobs:
           echo "Falha ao fazer push após múltiplas tentativas."
           exit 1
 
-      # 7) (Opcional) Diagnóstico em caso de erro
-      - name: Diagnóstico pós-falha
-        if: failure()
-        run: |
-          echo "=== git status (output) ===";  (cd output && git status || true)
-          echo "=== branches (output) ===";   (cd output && git branch -vv || true)
-          echo "=== remotes (output) ===";    (cd output && git remote -v || true)
-          echo "=== últimos commits (output) ==="; (cd output && git log --oneline -5 || true)
+      ######################################################################
+      # 9) Artifacts de debug (sempre) — úteis para auditoria e troubleshooting
+      ######################################################################
+      - name: Upload artifacts (repo e output) para diagnóstico
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-graficos-${{ github.run_id }}
+          path: |
+            repo/${{ env.OUTPUT_DIR }}/**
+            output/${{ env.OUTPUT_DIR }}/**
+            repo/${{ env.MARKDOWN_FILE }}
+            output/${{ env.MARKDOWN_FILE }}
+          if-no-files-found: ignore
