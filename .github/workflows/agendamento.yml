@@ -2,15 +2,14 @@ name: Análise → Atualiza branch data-output
 
 on:
   schedule:
-    - cron: "0 11 * * 1"   # 08:00 BRT nas segundas (11:00 UTC)
+    - cron: "0 11 * * 1"   # 08:00 BRT (11:00 UTC) toda segunda
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: write   # necessário para permitir git push com GITHUB_TOKEN
 
-# Evita duas execuções concorrentes mexendo na mesma branch de output
 concurrency:
-  group: output-${{ github.ref }}
+  group: perfil-grupo-data-output
   cancel-in-progress: true
 
 env:
@@ -22,29 +21,30 @@ jobs:
   run-and-publish:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
     steps:
-      - name: Checkout do repositório (para ler código/fonte)
+      # 1) Checkout do código-fonte na master (somente leitura/execução)
+      - name: Checkout master (fonte)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           ref: master
+          fetch-depth: 0
+          path: repo
+          # credenciais não são necessárias para leitura aqui
+          persist-credentials: false
 
-      - name: Configurar Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      - name: Setup Python 3.11
+      - name: Configurar Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
       - name: Instalar dependências
+        working-directory: repo
         run: pip install -r requirements.txt
 
       - name: Executar análise (gera PNGs e Markdown)
+        working-directory: repo
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
@@ -52,54 +52,80 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python analise.py
 
-      # A partir daqui, trocamos para a branch de artefatos, sem mexer na master
-      - name: Buscar branch de output
+      # 2) Garantir que a branch data-output exista (se não existir, cria)
+      - name: Preparar repositório "nu" para criar branch de output (se precisar)
         run: |
-          # Garante que temos referências da remota
-          git fetch origin $OUTPUT_BRANCH || true
-
-          # Se a branch não existe no remoto, cria localmente a partir de um commit vazio
-          if ! git ls-remote --heads origin $OUTPUT_BRANCH | grep -q "$OUTPUT_BRANCH"; then
-            echo "Branch $OUTPUT_BRANCH não existe no remoto. Criando..."
-            # cria uma árvore vazia e comita .gitkeep para inicializar
-            git checkout --orphan $OUTPUT_BRANCH
-            git rm -rf . || true
-            mkdir -p $OUTPUT_DIR
-            touch $OUTPUT_DIR/.gitkeep
-            [ -f $MARKDOWN_FILE ] || echo "# Análise" > $MARKDOWN_FILE
+          mkdir -p bare && cd bare
+          git init
+          git remote add origin "https://github.com/${{ github.repository }}.git"
+          git fetch origin --depth=1 || true
+          # Se a data-output não existe no remoto, cria e faz push inicial
+          if ! git ls-remote --heads origin "$OUTPUT_BRANCH" | grep -q "$OUTPUT_BRANCH"; then
+            echo "Criando $OUTPUT_BRANCH no remoto..."
+            git checkout --orphan "$OUTPUT_BRANCH"
+            mkdir -p "$OUTPUT_DIR"
+            touch "$OUTPUT_DIR/.gitkeep"
+            echo "# Análise" > "$MARKDOWN_FILE"
             git add -A
-            git commit -m "init $OUTPUT_BRANCH"
-            git push -u origin $OUTPUT_BRANCH
-          else
-            # Checkout da branch de output
-            git checkout $OUTPUT_BRANCH
-            # Traz updates remotos por segurança
-            git pull --rebase --autostash origin $OUTPUT_BRANCH || true
+            git -c user.name="github-actions[bot]" \
+                -c user.email="github-actions[bot]@users.noreply.github.com" \
+                commit -m "init $OUTPUT_BRANCH"
+            git push "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
+                     "$OUTPUT_BRANCH":"$OUTPUT_BRANCH"
           fi
 
-      - name: Atualizar artefatos na branch de output
-        run: |
-          # Limpa somente o que vamos substituir (opcional: manter histórico de outros arquivos)
-          mkdir -p $OUTPUT_DIR
-          # copia os novos arquivos gerados da workspace da master para a árvore atual
-          git checkout master -- $OUTPUT_DIR || true
-          git checkout master -- $MARKDOWN_FILE || true
+      # 3) Checkout da branch data-output em diretório separado (com credenciais para push)
+      - name: Checkout data-output (artefatos)
+        id: checkout_output
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.OUTPUT_BRANCH }}
+          fetch-depth: 0
+          path: output
+          persist-credentials: true   # deixa credenciais para permitir git push
+          # usa por padrão o ${{ github.token }} do workflow
+          # (actions/checkout documenta esse comportamento) 
 
-          # Adiciona e commita se houver mudanças
-          git add $OUTPUT_DIR/ $MARKDOWN_FILE || true
+      - name: Configurar Git (somente no diretório de output)
+        working-directory: output
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/output"
+
+      # 4) Copiar arquivos gerados da master para a pasta de output
+      - name: Copiar novas imagens e markdown
+        run: |
+          mkdir -p "output/${OUTPUT_DIR}"
+          cp -r "repo/${OUTPUT_DIR}/." "output/${OUTPUT_DIR}/" 2>/dev/null || true
+          if [ -f "repo/${MARKDOWN_FILE}" ]; then
+            cp "repo/${MARKDOWN_FILE}" "output/${MARKDOWN_FILE}"
+          fi
+
+      # 5) Commit condicional
+      - name: Commit (somente se houver mudanças)
+        working-directory: output
+        id: commit
+        run: |
+          git add "${OUTPUT_DIR}/" "${MARKDOWN_FILE}" 2>/dev/null || true
           if git diff --cached --quiet; then
-            echo "Sem alterações nos artefatos."
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Sem mudanças para commit."
             exit 0
           fi
           git commit -m "chore(output): atualiza PNGs e análise [$(date '+%Y-%m-%d')]"
+          echo "changed=true" >> $GITHUB_OUTPUT
 
-      - name: Push com rebase + retry (sem force)
+      # 6) Push com rebase + retry (sem force)
+      - name: Push para data-output (com retry)
+        if: steps.commit.outputs.changed == 'true'
+        working-directory: output
         run: |
           set -e
           for i in 1 2 3 4 5; do
-            echo "Tentativa $i de push para $OUTPUT_BRANCH..."
-            git pull --rebase --autostash origin $OUTPUT_BRANCH || true
-            if git push origin $OUTPUT_BRANCH; then
+            echo "Tentativa $i..."
+            git pull --rebase --autostash origin "$OUTPUT_BRANCH" || true
+            if git push origin "$OUTPUT_BRANCH"; then
               echo "Push OK."
               exit 0
             fi
@@ -108,3 +134,12 @@ jobs:
           done
           echo "Falha ao fazer push após múltiplas tentativas."
           exit 1
+
+      # 7) (Opcional) Diagnóstico em caso de erro
+      - name: Diagnóstico pós-falha
+        if: failure()
+        run: |
+          echo "=== git status (output) ===";  (cd output && git status || true)
+          echo "=== branches (output) ===";   (cd output && git branch -vv || true)
+          echo "=== remotes (output) ===";    (cd output && git remote -v || true)
+          echo "=== últimos commits (output) ==="; (cd output && git log --oneline -5 || true)
