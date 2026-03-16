@@ -95,13 +95,12 @@ jobs:
               missing=1
             fi
           done
-          # Torne o analise.md obrigatório descomentando as linhas abaixo:
-          # if [ ! -f "repo/${MARKDOWN_FILE}" ]; then
-          #   echo "::error file=${MARKDOWN_FILE}::analise.md ausente"
-          #   missing=1
-          # fi
+          if [ ! -f "repo/${MARKDOWN_FILE}" ]; then
+            echo '::error file=analise.md::analise.md ausente'
+            missing=1
+          fi
           if [ "$missing" = "1" ]; then
-            echo "Um ou mais arquivos esperados não foram gerados pelo Python. Abortando."
+            echo 'Um ou mais arquivos esperados não foram gerados pelo Python. Abortando.'
             exit 1
           fi
 
