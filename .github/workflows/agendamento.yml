@@ -76,13 +76,15 @@ jobs:
       # Debug: listar o que o Python produziu
       - name: Debug – listar arquivos gerados (repo/)
         run: |
-          echo "==== repo/ (raiz) ===="; ls -lah repo | sed 's/^/repo: /'
-          echo "==== repo/${OUTPUT_DIR} ===="; ls -lah "repo/${OUTPUT_DIR}" | sed 's/^/repo-graficos: /'
+          echo "==== repo/ (raiz) ===="
+          ls -lah repo | sed 's/^/repo: /'
+          echo "==== repo/${OUTPUT_DIR} ===="
+          ls -lah "repo/${OUTPUT_DIR}" | sed 's/^/repo-graficos: /'
 
       ######################################################################
       # 2) Validação rígida: TODOS os 14 PNGs precisam existir em repo/graficos
       #    - Se faltar qualquer um, o job falha com mensagem clara
-      #    - (Opcional) torne o analise.md OBRIGATÓRIO descomentando o teste
+      #    - (Opcional) tornar analise.md OBRIGATÓRIO descomentando o teste
       ######################################################################
       - name: Validação rígida (repo → 14 PNGs)
         run: |
@@ -155,12 +157,31 @@ jobs:
           cp -r "repo/${OUTPUT_DIR}/." "output/${OUTPUT_DIR}/"
 
           # Copia analise.md se existir (opcional; para obrigar, use validação acima)
-          if [ -f "repo/${MARKDOWN_FILE}" ]; then
-            cp "repo/${MARKDOWN_FILE}" "output/${MARKDOWN_FILE}"
-          fi
+          [ -f "repo/${MARKDOWN_FILE}" ] && cp "repo/${MARKDOWN_FILE}" "output/${MARKDOWN_FILE}" || true
 
-      - name: Debug – listar arquivos prontos para commit (output/)
+      # Debug sem bloco if (evita erro de shell)
+      - name: Debug – listar PNGs em output/graficos
         run: |
-          echo "==== output/${OUTPUT_DIR} ===="; ls -lah "output/${OUTPUT_DIR}" | sed 's/^/output-graficos: /'
-          if [ -f "output/${MARKDOWN_FILE}" ]; then
-            echo "==== output/${MARKDOWN_FILE} ===="; wc -l "output/${MARKDOWN_FILE}" || true
+          echo "==== output/${OUTPUT_DIR} ===="
+          ls -lah "output/${OUTPUT_DIR}" | sed 's/^/output-graficos: /'
+
+      - name: Debug – mostrar cabeçalho do analise.md (se existir)
+        run: |
+          [ -f "output/${MARKDOWN_FILE}" ] \
+            && { echo "==== output/${MARKDOWN_FILE} ===="; head -n 5 "output/${MARKDOWN_FILE}" || true; } \
+            || echo "analise.md não encontrado em output/ (opcional)"
+
+      ######################################################################
+      # 6) Validação pós-cópia: TODOS os 14 PNGs precisam estar em output/graficos
+      ######################################################################
+      - name: Validação rígida (output → 14 PNGs)
+        run: |
+          missing=0
+          for f in ${EXPECTED_PNGS}; do
+            if [ ! -f "output/${OUTPUT_DIR}/${f}" ]; then
+              echo "::error file=${OUTPUT_DIR}/${f}::Arquivo esperado não copiado para output/${OUTPUT_DIR}/${f}"
+              missing=1
+            fi
+          done
+          if [ "$missing" = "1" ]; then
+            echo "Um ou mais PNGs não foram copiados
