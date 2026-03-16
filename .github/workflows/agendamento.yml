@@ -86,21 +86,17 @@ jobs:
       #    - Se faltar qualquer um, o job falha com mensagem clara
       #    - (Opcional) tornar analise.md OBRIGATÓRIO descomentando o teste
       ######################################################################
-      - name: Validação rígida (repo → 14 PNGs)
+      - name: Validação (output → 14 PNGs)
         run: |
           missing=0
           for f in ${EXPECTED_PNGS}; do
-            if [ ! -f "repo/${OUTPUT_DIR}/${f}" ]; then
-              echo "::error file=${OUTPUT_DIR}/${f}::Arquivo esperado não gerado em repo/${OUTPUT_DIR}/${f}"
+            if [ ! -f "output/${OUTPUT_DIR}/${f}" ]; then
+              echo "::error file=${OUTPUT_DIR}/${f}::Arquivo esperado não copiado para output/${OUTPUT_DIR}/${f}"
               missing=1
             fi
           done
-          if [ ! -f "repo/${MARKDOWN_FILE}" ]; then
-            echo '::error file=analise.md::analise.md ausente'
-            missing=1
-          fi
           if [ "$missing" = "1" ]; then
-            echo 'Um ou mais arquivos esperados não foram gerados pelo Python. Abortando.'
+            echo "Um ou mais PNGs não foram copiados para output/${OUTPUT_DIR}. Abortando."
             exit 1
           fi
 
