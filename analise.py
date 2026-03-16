@@ -1011,10 +1011,7 @@ def main():
     log.info("=== Análise concluída. %d gráficos gerados. ===", len(graficos))
 
     # Gera o texto com os dados dos gráficos com IA (não bloqueia o script se falhar)
-    try:
-        gerar_analise_ia(df, ascendencia_final, sintomas_final)
-    except Exception as exc:
-        log.error("Falha ao gerar análise: %s", exc, exc_info=True)
+    gerar_analise_ia(df, ascendencia_final, sintomas_final)
 
 if __name__ == "__main__":
     main()
