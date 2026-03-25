@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OUTPUT_BRANCH: data-output
+  OUTPUT_BRANCH: data-output-2
   OUTPUT_DIR: graficos
   MARKDOWN_FILE: analise.md
 
