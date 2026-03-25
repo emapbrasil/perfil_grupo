@@ -82,21 +82,20 @@ jobs:
           ls -lah "repo/${OUTPUT_DIR}" | sed 's/^/repo-graficos: /'
 
       ######################################################################
-      # 2) Validação rígida: TODOS os 14 PNGs precisam existir em repo/graficos
-      #    - Se faltar qualquer um, o job falha com mensagem clara
-      #    - (Opcional) tornar analise.md OBRIGATÓRIO descomentando o teste
+      # 2) Validação prévia: TODOS os 14 PNGs precisam existir em repo/graficos
+      #    (onde o Python os gerou) — antes de qualquer cópia
       ######################################################################
-      - name: Validação (output → 14 PNGs)
+      - name: Validação (repo → 14 PNGs gerados pelo Python)
         run: |
           missing=0
           for f in ${EXPECTED_PNGS}; do
-            if [ ! -f "output/${OUTPUT_DIR}/${f}" ]; then
-              echo "::error file=${OUTPUT_DIR}/${f}::Arquivo esperado não copiado para output/${OUTPUT_DIR}/${f}"
+            if [ ! -f "repo/${OUTPUT_DIR}/${f}" ]; then
+              echo "::error file=${OUTPUT_DIR}/${f}::Arquivo não gerado pelo Python em repo/${OUTPUT_DIR}/${f}"
               missing=1
             fi
           done
           if [ "$missing" = "1" ]; then
-            echo "Um ou mais PNGs não foram copiados para output/${OUTPUT_DIR}. Abortando."
+            echo "Um ou mais PNGs não foram gerados pelo Python. Abortando."
             exit 1
           fi
 
@@ -179,4 +178,20 @@ jobs:
             fi
           done
           if [ "$missing" = "1" ]; then
-            echo "Um ou mais PNGs não foram copiados
+            echo "Um ou mais PNGs não foram copiados para output/${OUTPUT_DIR}. Abortando."
+            exit 1
+          fi
+
+      ######################################################################
+      # 7) Commit e push na branch data-output
+      ######################################################################
+      - name: Commit e push na branch ${{ env.OUTPUT_BRANCH }}
+        working-directory: output
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nenhuma alteração detectada. Nada a commitar."
+          else
+            git commit -m "chore: atualiza análise EMAP [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+            git push origin "${OUTPUT_BRANCH}"
+          fi
