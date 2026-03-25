@@ -1,39 +1,21 @@
 name: Análise EMAP → Publicar em data-output
 
 on:
-  # Segunda-feira às 08:00 BRT (11:00 UTC)
   schedule:
     - cron: "0 11 * * 1"
   workflow_dispatch:
 
 permissions:
-  contents: write   # permite git push com GITHUB_TOKEN
+  contents: write
 
-# Evita execuções concorrentes mexendo na mesma branch de output
 concurrency:
   group: perfil-grupo-data-output
   cancel-in-progress: true
 
-# Parâmetros globais e lista explícita de arquivos esperados
 env:
   OUTPUT_BRANCH: data-output
   OUTPUT_DIR: graficos
   MARKDOWN_FILE: analise.md
-  EXPECTED_PNGS: >-
-    distrib_genero.png
-    febre_reumatica.png
-    tempo_benzetacil.png
-    imc.png
-    idade_primeiros_sintomas.png
-    sintomas.png
-    ascendencia.png
-    distribuicao_uf_barras.png
-    distribuicao_uf_mapa.png
-    relacao_tabagismo.png
-    relacao_estresse.png
-    relacao_cirurgia.png
-    relacao_covid.png
-    cards_resumo.png
 
 jobs:
   run-and-publish:
@@ -42,9 +24,7 @@ jobs:
 
     steps:
       ######################################################################
-      # 1) Checkout do código-fonte na master (apenas para ler/gerar)
-      #    - Em 'repo/' para manter isolado do checkout de output
-      #    - Sem credenciais persistidas (não vamos fazer push a partir daqui)
+      # 1) Checkout do código-fonte na master
       ######################################################################
       - name: Checkout master (fonte) em repo/
         uses: actions/checkout@v4
@@ -73,7 +53,6 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python analise.py
 
-      # Debug: listar o que o Python produziu
       - name: Debug – listar arquivos gerados (repo/)
         run: |
           echo "==== repo/ (raiz) ===="
@@ -82,15 +61,28 @@ jobs:
           ls -lah "repo/${OUTPUT_DIR}" | sed 's/^/repo-graficos: /'
 
       ######################################################################
-      # 2) Validação prévia: TODOS os 14 PNGs precisam existir em repo/graficos
-      #    (onde o Python os gerou) — antes de qualquer cópia
+      # 2) Validação prévia: todos os PNGs devem existir em repo/graficos
       ######################################################################
       - name: Validação (repo → 14 PNGs gerados pelo Python)
         run: |
           missing=0
-          for f in ${EXPECTED_PNGS}; do
+          for f in \
+            distrib_genero.png \
+            febre_reumatica.png \
+            tempo_benzetacil.png \
+            imc.png \
+            idade_primeiros_sintomas.png \
+            sintomas.png \
+            ascendencia.png \
+            distribuicao_uf_barras.png \
+            distribuicao_uf_mapa.png \
+            relacao_tabagismo.png \
+            relacao_estresse.png \
+            relacao_cirurgia.png \
+            relacao_covid.png \
+            cards_resumo.png; do
             if [ ! -f "repo/${OUTPUT_DIR}/${f}" ]; then
-              echo "::error file=${OUTPUT_DIR}/${f}::Arquivo não gerado pelo Python em repo/${OUTPUT_DIR}/${f}"
+              echo "::error::Arquivo não gerado pelo Python: repo/${OUTPUT_DIR}/${f}"
               missing=1
             fi
           done
@@ -98,9 +90,10 @@ jobs:
             echo "Um ou mais PNGs não foram gerados pelo Python. Abortando."
             exit 1
           fi
+          echo "✅ Todos os 14 PNGs encontrados em repo/${OUTPUT_DIR}/"
 
       ######################################################################
-      # 3) Garantir que a branch data-output exista no remoto (criação 1ª vez)
+      # 3) Garantir que a branch data-output exista no remoto
       ######################################################################
       - name: Garantir existência da branch ${{ env.OUTPUT_BRANCH }} no remoto
         run: |
@@ -123,7 +116,7 @@ jobs:
           fi
 
       ######################################################################
-      # 4) Checkout da branch data-output em 'output/' (com credenciais)
+      # 4) Checkout da branch data-output em output/
       ######################################################################
       - name: Checkout ${{ env.OUTPUT_BRANCH }} (artefatos) em output/
         uses: actions/checkout@v4
@@ -141,19 +134,15 @@ jobs:
           git config --global --add safe.directory "$GITHUB_WORKSPACE/output"
 
       ######################################################################
-      # 5) Sincronização TOTAL: apaga e recopia graficos/ + copia analise.md (se existir)
+      # 5) Sincronização: apaga e recopia graficos/ + copia analise.md
       ######################################################################
       - name: Sincronizar graficos/ e analise.md para a branch de output
         run: |
-          # Zera diretório de gráficos e recopia TUDO gerado pelo Python
           rm -rf "output/${OUTPUT_DIR}"
           mkdir -p "output/${OUTPUT_DIR}"
           cp -r "repo/${OUTPUT_DIR}/." "output/${OUTPUT_DIR}/"
-
-          # Copia analise.md se existir (opcional; para obrigar, use validação acima)
           [ -f "repo/${MARKDOWN_FILE}" ] && cp "repo/${MARKDOWN_FILE}" "output/${MARKDOWN_FILE}" || true
 
-      # Debug sem bloco if (evita erro de shell)
       - name: Debug – listar PNGs em output/graficos
         run: |
           echo "==== output/${OUTPUT_DIR} ===="
@@ -166,14 +155,28 @@ jobs:
             || echo "analise.md não encontrado em output/ (opcional)"
 
       ######################################################################
-      # 6) Validação pós-cópia: TODOS os 14 PNGs precisam estar em output/graficos
+      # 6) Validação pós-cópia: todos os PNGs devem estar em output/graficos
       ######################################################################
       - name: Validação rígida (output → 14 PNGs)
         run: |
           missing=0
-          for f in ${EXPECTED_PNGS}; do
+          for f in \
+            distrib_genero.png \
+            febre_reumatica.png \
+            tempo_benzetacil.png \
+            imc.png \
+            idade_primeiros_sintomas.png \
+            sintomas.png \
+            ascendencia.png \
+            distribuicao_uf_barras.png \
+            distribuicao_uf_mapa.png \
+            relacao_tabagismo.png \
+            relacao_estresse.png \
+            relacao_cirurgia.png \
+            relacao_covid.png \
+            cards_resumo.png; do
             if [ ! -f "output/${OUTPUT_DIR}/${f}" ]; then
-              echo "::error file=${OUTPUT_DIR}/${f}::Arquivo esperado não copiado para output/${OUTPUT_DIR}/${f}"
+              echo "::error::Arquivo não copiado: output/${OUTPUT_DIR}/${f}"
               missing=1
             fi
           done
@@ -181,6 +184,7 @@ jobs:
             echo "Um ou mais PNGs não foram copiados para output/${OUTPUT_DIR}. Abortando."
             exit 1
           fi
+          echo "✅ Todos os 14 PNGs encontrados em output/${OUTPUT_DIR}/"
 
       ######################################################################
       # 7) Commit e push na branch data-output
