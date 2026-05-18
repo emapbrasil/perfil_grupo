@@ -1,35 +1,33 @@
 # Análise do Perfil EMAP Brasil
 
-*Gerado automaticamente em 11/05/2026 com base em 153 respondentes.*
+*Gerado automaticamente em 18/05/2026 com base em 153 respondentes.*
 
 ## Dados Básicos
 
- Ao analisar o perfil demográfico dos participantes do grupo EMAP Brasil, podemos observar alguns padrões interessantes. Em primeiro lugar, nota-se que o gênero feminino é predominante, representando 65,4% dos respondentes, enquanto o gênero masculino representa 34,6%. Isso pode sugerir que as mulheres sejam mais propensas a desenvolver a síndrome EMAP ou que elas estejam mais dispostas a participar de pesquisas online.
+A análise do perfil demográfico dos participantes do grupo EMAP Brasil revela alguns padrões interessantes. Em primeiro lugar, é notável que 65,4% dos respondentes sejam mulheres, enquanto 34,6% sejam homens. Isso pode sugerir que a EMAP afeta mais frequentemente as mulheres, mas é importante lembrar que essa pode ser uma característica do grupo de participantes e não necessariamente da população em geral.
 
-A idade média de manifestação dos sintomas é de 52,4 anos, o que pode indicar que a síndrome EMAP afeta principalmente adultos maduros. Já a idade média atual dos participantes é de 58,7 anos, o que sugere que a síndrome pode ter um impacto duradouro na vida das pessoas.
+A idade média de manifestação dos sintomas da EMAP é de 52,4 anos, o que pode indicar que a doença começa a se manifestar na meia-idade. Já a idade média atual dos participantes é de 58,7 anos, o que sugere que a maioria dos participantes está na faixa etária de 50 a 60 anos.
 
-A distribuição geográfica dos participantes também é interessante. O estado de São Paulo concentra 52,3% dos respondentes, seguido pelos estados de Minas Gerais (11,8%), Paraná (10,5%) e Santa Catarina (7,2%). Isso pode ser devido à maior população e acesso à internet nesses estados, o que pode ter facilitado a participação na pesquisa.
+A distribuição geográfica dos participantes também é interessante. A maioria dos respondentes (52,3%) reside no estado de São Paulo, seguido pelos estados de Minas Gerais (11,8%), Paraná (10,5%) e Santa Catarina (7,2%). Isso pode ser devido ao fato de que a pesquisa foi realizada via internet e os participantes de São Paulo podem ter tido mais acesso à tecnologia e à informação sobre a pesquisa.
 
-Quanto à ascendência, 88,9% dos participantes se declararam de ascendência europeia latina (francesa, italiana, espanhola ou portuguesa), o que pode sugerir que essa população seja mais propensa a desenvolver a síndrome EMAP. No entanto, é importante notar que a amostra pode ter sido influenciada por vieses de seleção, como a maior propensão de pessoas de certo perfil socioeconômico e cultural de participar de pesquisas online.
+Quanto à ascendência, 88,9% dos participantes declararam ter ascendência europeia latina (francês, italiano, espanhol ou português), o que pode ser uma caractereística do grupo de participantes e não necessariamente da população em geral.
 
 ## Dados de Saúde
 
-Ao analisar os dados de saúde dos participantes, podemos observar alguns padrões relevantes. Em primeiro lugar, nota-se que 41,8% dos participantes têm sobrepeso, 30,7% têm peso normal, 19,6% têm obesidade grau 1, 3,9% têm obesidade grau 2 e 1,3% têm obesidade grau 3. Isso pode sugerir que o excesso de peso seja um fator de risco para a síndrome EMAP.
+A análise dos dados de saúde dos participantes revela alguns pontos interessantes. Em primeiro lugar, é notável que 41,8% dos participantes tenham sobrepeso, enquanto 19,6% tenham obesidade grau 1. Isso pode sugerir que a obesidade é um fator de risco para a EMAP, mas é importante lembrar que a correlação não implica causalidade.
 
-Além disso, 88,2% dos participantes relataram ter tido febre reumática, o que pode indicar que essa condição seja um fator de risco importante para a síndrome EMAP. O uso de Benzetacil também é comum entre os participantes, com uma média de 11,4 anos de uso.
+Além disso, 88,2% dos participantes declararam ter tido febre reumática no passado, o que pode indicar que a febre reumática é um fator de risco para a EMAP. Já o uso de Benzetacil, um medicamento utilizado para tratar a EMAP, é comum entre os participantes, com uma média de 11,4 anos de uso.
 
-Outro ponto interessante é que 74,5% dos participantes relataram ter sintomas de "nictalopia" (cegueira noturna), 64,1% relataram ter "visão embacada" (neblina) e 56,2% relataram ter "escotomas" (pontos cegos). Isso pode sugerir que a síndrome EMAP tenha um impacto significativo na visão e na qualidade de vida dos participantes.
+Outro ponto interessante é que 30,7% dos participantes declararam estar sob estresse intenso, o que pode sugerir que o estresse é um fator que pode influenciar a manifestação dos sintomas da EMAP.
 
-Quanto ao estresse, 30,7% dos participantes concordaram totalmente que sofrem de estresse intenso, enquanto 22,2% discordaram totalmente. Já o tabagismo intenso foi relatado por apenas 5,9% dos participantes, o que pode sugerir que essa prática não seja comum entre os participantes.
-
-A relação com a COVID-19 também é interessante. 19% dos participantes relataram ter percebido piora da visão após ter tido COVID-19, enquanto 19% relataram que seu problema de visão surgiu após a pandemia. No entanto, 17% dos participantes não perceberam piora da visão durante a pandemia, o que sugere que a relação entre a síndrome EMAP e a COVID-19 ainda não está clara.
+Quanto à relação com a COVID-19, é notável que 19% dos participantes declararam ter percebido piora da visão após ter tido COVID-19, enquanto 19% declararam que seu problema de visão surgiu após a pandemia. Isso pode sugerir que a COVID-19 pode ter algum efeito sobre a EMAP, mas é importante lembrar que a correlação não implica causalidade.
 
 ## Conclusão
 
-Em resumo, os dados da pesquisa de perfil dos participantes do grupo EMAP Brasil sugerem que a síndrome EMAP afeta principalmente adultos maduros, especialmente mulheres, e que a febre reumática pode ser um fator de risco importante. Além disso, o excesso de peso e o uso de Benzetacil também podem ser fatores de risco relevantes.
+Em resumo, a análise dos dados do grupo EMAP Brasil revela alguns padrões interessantes sobre a demografia e a saúde dos participantes. É possível que a EMAP afete mais frequentemente as mulheres e que a doença comece a se manifestar na meia-idade. Além disso, a obesidade e a febre reumática podem ser fatores de risco para a EMAP, e o estresse intenso pode influenciar a manifestação dos sintomas.
 
-A relação entre a síndrome EMAP e a COVID-19 ainda não está clara, mas os dados sugerem que a pandemia pode ter tido um impacto na visão e na qualidade de vida dos participantes. É importante notar que a amostra pode ter sido influenciada por vieses de seleção, o que pode ter afetado os resultados.
+É importante que os pesquisadores continuem a estudar a EMAP para entender melhor suas causas e consequências. Além disso, é fundamental que os pacientes e familiares sejam informados e apoiados para lidar com a doença. A nossa ONG de suporte a pacientes está comprometida em fornecer recursos e apoio para ajudar os pacientes a gerenciar a EMAP e melhorar sua qualidade de vida.
 
-Para pesquisadores, esses achados podem ser interessantes para explorar melhor a relação entre a síndrome EMAP e a febre reumática, bem como o impacto da pandemia de COVID-19 na visão e na qualidade de vida dos pacientes. Além disso, é fundamental continuar a apoiar os pacientes e familiares afetados pela síndrome EMAP, oferecendo-lhes recursos e informações para lidar com a condição e melhorar sua qualidade de vida.
+A pesquisa também sugere que a COVID-19 pode ter algum efeito sobre a EMAP, o que pode ser um tema de interesse para pesquisadores e pacientes. No entanto, é importante lembrar que a correlação não implica causalidade e que mais estudos são necessários para entender a relação entre a COVID-19 e a EMAP.
 
-É importante lembrar que a síndrome EMAP é uma condição rara e complexa, e que mais pesquisas são necessárias para entender melhor suas causas e consequências. No entanto, com a colaboração de pacientes, familiares e pesquisadores, podemos trabalhar juntos para encontrar respostas e melhorar a vida das pessoas afetadas pela síndrome EMAP.
+Em última análise, a análise dos dados do grupo EMAP Brasil oferece uma visão geral da doença e de seus pacientes, e pode ser um recurso valioso para pesquisadores, pacientes e familiares. Nossa ONG de suporte a pacientes está comprometida em continuar a fornecer recursos e apoio para ajudar os pacientes a lidar com a EMAP e melhorar sua qualidade de vida.
