@@ -224,6 +224,7 @@ def tratar_dados(df: pd.DataFrame):
 
     # Ascendência
     asc = df[["data_hora_resposta", "cod_identificador", "ascendencia"]].copy()
+    asc["ascendencia"] = asc["ascendencia"].str.replace(r".*Europa latina.*","Europa Latina", regex=True)
     asc["ascendencia"] = asc["ascendencia"].apply(_replace_commas_in_parentheses)
     asc["ascendencia"] = asc["ascendencia"].apply(_remover_acentos)
     asc["ascendencia"] = asc["ascendencia"].str.split(", ")
