@@ -1,33 +1,31 @@
 # Análise do Perfil EMAP Brasil
 
-*Gerado automaticamente em 18/05/2026 com base em 153 respondentes.*
+*Gerado automaticamente em 22/05/2026 com base em 154 respondentes.*
 
 ## Dados Básicos
 
-A análise do perfil demográfico dos participantes do grupo EMAP Brasil revela alguns padrões interessantes. Em primeiro lugar, é notável que 65,4% dos respondentes sejam mulheres, enquanto 34,6% sejam homens. Isso pode sugerir que a EMAP afeta mais frequentemente as mulheres, mas é importante lembrar que essa pode ser uma característica do grupo de participantes e não necessariamente da população em geral.
+Ao analisar o perfil demográfico dos participantes do grupo EMAP Brasil, podemos observar alguns padrões interessantes. Em primeiro lugar, a distribuição de gênero mostra que 64,9% dos respondentes são mulheres, enquanto 35,1% são homens. Isso pode sugerir que a EMAP pode afetar mais mulheres do que homens, mas é importante lembrar que a amostra foi coletada via internet e pode haver um viés de seleção.
 
-A idade média de manifestação dos sintomas da EMAP é de 52,4 anos, o que pode indicar que a doença começa a se manifestar na meia-idade. Já a idade média atual dos participantes é de 58,7 anos, o que sugere que a maioria dos participantes está na faixa etária de 50 a 60 anos.
+A idade média de manifestação dos sintomas é de 52,4 anos, o que pode indicar que a EMAP é uma condição que afeta mais pessoas em idade madura. Além disso, a idade média atual dos respondentes é de 58,7 anos, o que sugere que a condição pode ter um impacto a longo prazo na saúde dos pacientes.
 
-A distribuição geográfica dos participantes também é interessante. A maioria dos respondentes (52,3%) reside no estado de São Paulo, seguido pelos estados de Minas Gerais (11,8%), Paraná (10,5%) e Santa Catarina (7,2%). Isso pode ser devido ao fato de que a pesquisa foi realizada via internet e os participantes de São Paulo podem ter tido mais acesso à tecnologia e à informação sobre a pesquisa.
+A distribuição geográfica dos participantes também é interessante, com 52,6% dos respondentes vindos do estado de São Paulo. Isso pode se dever ao fato de que São Paulo é o estado mais populoso do país e tem uma maior concentração de recursos de saúde. Outros estados com uma presença significativa são Minas Gerais (11,7%), Paraná (10,4%) e Santa Catarina (7,1%).
 
-Quanto à ascendência, 88,9% dos participantes declararam ter ascendência europeia latina (francês, italiano, espanhol ou português), o que pode ser uma caractereística do grupo de participantes e não necessariamente da população em geral.
+Quanto à ascendência, 77,3% dos respondentes se declaram de ascendência europeia latina, o que pode sugerir que a EMAP pode ter uma relação com a herança genética. No entanto, é importante lembrar que a amostra foi coletada via internet e pode haver um viés de seleção.
 
 ## Dados de Saúde
 
-A análise dos dados de saúde dos participantes revela alguns pontos interessantes. Em primeiro lugar, é notável que 41,8% dos participantes tenham sobrepeso, enquanto 19,6% tenham obesidade grau 1. Isso pode sugerir que a obesidade é um fator de risco para a EMAP, mas é importante lembrar que a correlação não implica causalidade.
+Ao analisar os dados de saúde, podemos ver que 42,2% dos respondentes têm sobrepeso, enquanto 30,5% têm peso normal. Além disso, 88,3% dos respondentes têm histórico de febre reumática, o que pode sugerir uma relação entre a febre reumática e a EMAP.
 
-Além disso, 88,2% dos participantes declararam ter tido febre reumática no passado, o que pode indicar que a febre reumática é um fator de risco para a EMAP. Já o uso de Benzetacil, um medicamento utilizado para tratar a EMAP, é comum entre os participantes, com uma média de 11,4 anos de uso.
+O uso de Benzetacil é comum entre os respondentes, com uma média de 11,4 anos de uso. Isso pode indicar que a medicação é eficaz no tratamento da condição, mas é importante lembrar que a amostra foi coletada via internet e pode haver um viés de seleção.
 
-Outro ponto interessante é que 30,7% dos participantes declararam estar sob estresse intenso, o que pode sugerir que o estresse é um fator que pode influenciar a manifestação dos sintomas da EMAP.
+Ao analisar os dados sobre tabagismo, estresse e cirurgias, podemos ver que 85,7% dos respondentes discordam totalmente de que têm tabagismo intenso, o que é um resultado positivo. Além disso, 22,1% dos respondentes discordam totalmente de que têm estresse intenso, o que pode sugerir que a condição pode ter um impacto negativo na saúde mental dos pacientes.
 
-Quanto à relação com a COVID-19, é notável que 19% dos participantes declararam ter percebido piora da visão após ter tido COVID-19, enquanto 19% declararam que seu problema de visão surgiu após a pandemia. Isso pode sugerir que a COVID-19 pode ter algum efeito sobre a EMAP, mas é importante lembrar que a correlação não implica causalidade.
+Quanto à relação com a COVID-19, podemos ver que 18,8% dos respondentes relatam ter percebido piora da visão após ter tido COVID-19, enquanto 18,2% relatam ter percebido piora da visão, mas não acreditam que haja relação com a COVID-19. Isso pode sugerir que a COVID-19 pode ter um impacto na saúde visual dos pacientes com EMAP, mas é importante lembrar que a amostra foi coletada via internet e pode haver um viés de seleção.
 
 ## Conclusão
 
-Em resumo, a análise dos dados do grupo EMAP Brasil revela alguns padrões interessantes sobre a demografia e a saúde dos participantes. É possível que a EMAP afete mais frequentemente as mulheres e que a doença comece a se manifestar na meia-idade. Além disso, a obesidade e a febre reumática podem ser fatores de risco para a EMAP, e o estresse intenso pode influenciar a manifestação dos sintomas.
+Em resumo, os dados da pesquisa de perfil dos participantes do grupo EMAP Brasil sugerem que a condição pode ter uma relação com a ascendência europeia latina e a febre reumática. Além disso, a distribuição geográfica dos participantes sugere que a condição pode ser mais comum em certas regiões do país.
 
-É importante que os pesquisadores continuem a estudar a EMAP para entender melhor suas causas e consequências. Além disso, é fundamental que os pacientes e familiares sejam informados e apoiados para lidar com a doença. A nossa ONG de suporte a pacientes está comprometida em fornecer recursos e apoio para ajudar os pacientes a gerenciar a EMAP e melhorar sua qualidade de vida.
+Os dados de saúde também sugerem que a EMAP pode ter um impacto negativo na saúde mental dos pacientes, e que a COVID-19 pode ter um impacto na saúde visual dos pacientes com EMAP. É importante lembrar que a amostra foi coletada via internet e pode haver um viés de seleção, mas os resultados podem ser úteis para os pesquisadores e os pacientes com EMAP.
 
-A pesquisa também sugere que a COVID-19 pode ter algum efeito sobre a EMAP, o que pode ser um tema de interesse para pesquisadores e pacientes. No entanto, é importante lembrar que a correlação não implica causalidade e que mais estudos são necessários para entender a relação entre a COVID-19 e a EMAP.
-
-Em última análise, a análise dos dados do grupo EMAP Brasil oferece uma visão geral da doença e de seus pacientes, e pode ser um recurso valioso para pesquisadores, pacientes e familiares. Nossa ONG de suporte a pacientes está comprometida em continuar a fornecer recursos e apoio para ajudar os pacientes a lidar com a EMAP e melhorar sua qualidade de vida.
+É fundamental que os pacientes com EMAP busquem apoio e tratamento adequados para gerenciar a condição e melhorar a qualidade de vida. A ONG de suporte a pacientes com EMAP pode desempenhar um papel importante nesse sentido, fornecendo informações e recursos para os pacientes e suas famílias. Além disso, é fundamental que os pesquisadores continuem a estudar a EMAP para entender melhor as causas e os mecanismos da condição, e para desenvolver tratamentos mais eficazes. Com o apoio e a colaboração de todos, é possível melhorar a vida dos pacientes com EMAP e encontrar soluções para essa condição rara e desafiadora.
