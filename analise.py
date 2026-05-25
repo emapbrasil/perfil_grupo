@@ -13,6 +13,12 @@ import warnings
 from datetime import datetime
 from pathlib import Path
 
+import requests
+import geopandas as gpd
+
+from google.oauth2 import service_account
+import gspread
+
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -44,12 +50,6 @@ plt.rcParams.update({
     "ytick.labelsize":  F_TICK,
     "legend.fontsize":  F_LEGENDA,
 })
-
-import requests
-import geopandas as gpd
-
-from google.oauth2 import service_account
-import gspread
 
 # ---------------------------------------------------------------------------
 # Configuração
@@ -221,6 +221,13 @@ def tratar_dados(df: pd.DataFrame):
 
     # UF padronizada
     df["UF"] = df["uf"].str.upper().str.strip()
+
+    # Deduplicação
+    chaves_dedup = ["cod_identificador", "genero", "nasc_ano", "percep_sintomas_ano", "UF"]
+    n_antes = len(df)
+    df = df.drop_duplicates(subset=chaves_dedup, keep="first")
+    n_removidos = n_antes - len(df)
+    log.info("Deduplicação: %d duplicatas removidas. Restam %d respondentes.", n_removidos, len(df))
 
     # Ascendência
     asc = df[["data_hora_resposta", "cod_identificador", "ascendencia"]].copy()
