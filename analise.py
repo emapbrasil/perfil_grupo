@@ -225,8 +225,18 @@ def tratar_dados(df: pd.DataFrame):
     # Deduplicação
     chaves_dedup = ["cod_identificador", "genero", "nasc_ano", "percep_sintomas_ano", "UF"]
     n_antes = len(df)
-    df = df.drop_duplicates(subset=chaves_dedup, keep="first")
-    n_removidos = n_antes - len(df)
+    df_dedup = df.drop_duplicates(subset=chaves_dedup, keep="first")
+    n_removidos = n_antes - len(df_dedup)
+
+    # Exibe as chaves dos registros removidos
+    duplicatas = df[~df.index.isin(df_dedup.index)]
+    if not duplicatas.empty:
+        print(f"\n{n_removidos} registro(s) removido(s) na deduplicação:")
+        print(duplicatas[chaves_dedup].to_string(index=False))
+    else:
+        print("Nenhum registro duplicado encontrado.")
+
+    df = df_dedup
     log.info("Deduplicação: %d duplicatas removidas. Restam %d respondentes.", n_removidos, len(df))
 
     # Ascendência
