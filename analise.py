@@ -880,6 +880,8 @@ Importante:
 - Mencione números e percentuais dos gráficos quando relevante
 - Não faça afirmações causais definitivas — use "pode indicar", "sugere", "é possível que"
 - O texto deve ter entre 400 e 600 palavras no total
+- Sempre inclua o texto "Correlação não implica em causalidade, portanto, mesmo com correlações altas não pode-se implicar que elas são causas da doença."
+- Inicie o texto dizendo que ele foi gerado por IA.
 """
 
 
