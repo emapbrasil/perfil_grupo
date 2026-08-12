@@ -478,6 +478,65 @@ def grafico_imc(df):
     _salvar(fig, "imc.png", "IMC")
 
 
+def grafico_escolaridade(df):
+    contagem = (
+        df["escolaridade"]
+        .astype(str)
+        .str.strip()
+        .replace({"": np.nan, "nan": np.nan, "None": np.nan})
+        .dropna()
+        .value_counts()
+    )
+    contagem = contagem[contagem > 0]
+    percentuais = (contagem / contagem.sum()) * 100
+    colors = sns.color_palette("Spectral", n_colors=len(contagem))[::-1]
+
+    fig, ax = plt.subplots(figsize=(10, 9))
+    ax.set_position([0.1, 0.30, 0.80, 0.55])
+    wedges, _ = ax.pie(
+        contagem,
+        labels=None,
+        startangle=90,
+        colors=colors,
+        wedgeprops=dict(width=0.6, edgecolor="white"),
+    )
+    for wedge, pct in zip(wedges, percentuais):
+        if pct < 5:
+            continue
+        ang = (wedge.theta2 + wedge.theta1) / 2
+        x = 0.6 * np.cos(np.deg2rad(ang))
+        y = 0.6 * np.sin(np.deg2rad(ang))
+        ax.text(
+            x, y, f"{int(pct)}%",
+            ha="center", va="center",
+            fontsize=F_PIZZA, color="black", weight="bold",
+        )
+
+    legend_labels = [
+        f"{l}: {int(c)} ({p:.1f}%)"
+        for l, c, p in zip(contagem.index, contagem.values, percentuais.values)
+    ]
+    ax.legend(
+        legend_labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.35),
+        fontsize=F_LEGENDA,
+        frameon=False,
+        ncol=2,
+    )
+    ax.axis("equal")
+
+    fig.suptitle("Escolaridade", fontsize=F_TITULO, x=0.1,
+                 ha="left", fontweight="bold", y=0.97)
+    fig.text(
+        0.1, 0.91,
+        "Nível de escolaridade declarado pelos participantes",
+        fontsize=F_SUBTITULO, ha="left", va="top",
+    )
+    plt.tight_layout(rect=[0, 0.10, 1, 0.88])
+    _salvar(fig, "escolaridade.png", "Escolaridade")
+
+
 def grafico_faixa_etaria_sintomas(df):
     bins   = [0, 40, 45, 50, 55, 60, 100]
     labels = ["<40", "40-45", "45-50", "50-55", "55-60", ">60"]
@@ -881,6 +940,7 @@ Importante:
 - Não faça afirmações causais definitivas — use "pode indicar", "sugere", "é possível que"
 - O texto deve ter entre 400 e 600 palavras no total
 - Sempre inclua o texto "Correlação não implica em causalidade, portanto, mesmo com correlações altas não pode-se implicar que elas são causas da doença."
+- Mencione que pode existir viés nos dados, uma vez que são coletados apenas com pessoas qe tiveram acesso ao grupo e a internet, e podem não representar uma amostra fidedigna da população com EMAP.
 - Inicie o texto dizendo que ele foi gerado por IA.
 """
 
@@ -1005,6 +1065,7 @@ def main():
         lambda: grafico_febre_reumatica(df),
         lambda: grafico_benzetacil(df),
         lambda: grafico_imc(df),
+        lambda: grafico_escolaridade(df),
         lambda: grafico_faixa_etaria_sintomas(df),
         lambda: grafico_sintomas(df, sintomas_final),
         lambda: grafico_ascendencia(df, ascendencia_final),
