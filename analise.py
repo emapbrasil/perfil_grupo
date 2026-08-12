@@ -489,51 +489,27 @@ def grafico_escolaridade(df):
     )
     contagem = contagem[contagem > 0]
     percentuais = (contagem / contagem.sum()) * 100
-    colors = sns.color_palette("Spectral", n_colors=len(contagem))[::-1]
 
-    fig, ax = plt.subplots(figsize=(10, 9))
-    ax.set_position([0.1, 0.30, 0.80, 0.55])
-    wedges, _ = ax.pie(
-        contagem,
-        labels=None,
-        startangle=90,
-        colors=colors,
-        wedgeprops=dict(width=0.6, edgecolor="white"),
-    )
-    for wedge, pct in zip(wedges, percentuais):
-        if pct < 5:
-            continue
-        ang = (wedge.theta2 + wedge.theta1) / 2
-        x = 0.6 * np.cos(np.deg2rad(ang))
-        y = 0.6 * np.sin(np.deg2rad(ang))
-        ax.text(
-            x, y, f"{int(pct)}%",
-            ha="center", va="center",
-            fontsize=F_PIZZA, color="black", weight="bold",
-        )
+    fig, ax = plt.subplots(figsize=(12, 8))
+    sns.barplot(x=contagem.values, y=contagem.index, palette="Spectral", ax=ax)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.spines[["left", "bottom"]].set_color("#CCCCCC")
+    ax.grid(axis="x", linestyle="--", alpha=0.3)
+    ax.set_axisbelow(True)
+    ax.set_xlabel("Número de Respondentes", fontsize=F_EIXO)
+    ax.set_ylabel("Escolaridade", fontsize=F_EIXO)
 
-    legend_labels = [
-        f"{l}: {int(c)} ({p:.1f}%)"
-        for l, c, p in zip(contagem.index, contagem.values, percentuais.values)
-    ]
-    ax.legend(
-        legend_labels,
-        loc="lower center",
-        bbox_to_anchor=(0.5, -0.35),
-        fontsize=F_LEGENDA,
-        frameon=False,
-        ncol=2,
-    )
-    ax.axis("equal")
+    for i, (count, pct) in enumerate(zip(contagem.values, percentuais.values)):
+        ax.text(count + 0.5, i, f"{int(count)} ({pct:.1f}%)", va="center", fontsize=F_ROTULO)
 
+    fig.subplots_adjust(top=0.78)
     fig.suptitle("Escolaridade", fontsize=F_TITULO, x=0.1,
                  ha="left", fontweight="bold", y=0.97)
     fig.text(
-        0.1, 0.91,
+        0.1, 0.90,
         "Nível de escolaridade declarado pelos participantes",
         fontsize=F_SUBTITULO, ha="left", va="top",
     )
-    plt.tight_layout(rect=[0, 0.10, 1, 0.88])
     _salvar(fig, "escolaridade.png", "Escolaridade")
 
 
